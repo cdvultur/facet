@@ -49,6 +49,7 @@ export const ISO_PATTERN = Cypress.env('ISO_PATTERN');
 export const HTTP_PROXY = Cypress.env('HTTP_PROXY');
 export const HTTPS_PROXY = Cypress.env('HTTPS_PROXY');
 export const NO_PROXY = Cypress.env('NO_PROXY');
+export const OPENSHIFT_CLUSTER_ID = Cypress.env('OPENSHIFT_CLUSTER_ID');
 
 // workaround for long text, expected to be copy&pasted by the user
 export const pasteText = (cy, selector, text) => {
@@ -134,16 +135,26 @@ export const setProxyValues = (httpProxy = null, httpsProxy = null, noProxy = nu
 
 export const generateIso = (
   sshPubKey,
+  clusterDay = 'day1',
   httpProxy = HTTP_PROXY,
   httpsProxy = HTTPS_PROXY,
   noProxy = NO_PROXY,
-) => {
+  ) => {
+
+  var downButtonsDict={
+    'day1': '#bare-metal-inventory-button-download-discovery-iso',
+    'day2': '#bare-metal-inventory-add-host-button-download-discovery-iso'
+  }
   // click to download the discovery iso
-  cy.get('#bare-metal-inventory-button-download-discovery-iso').click();
+  cy.log(downButtonsDict[clusterDay]);
+  cy.log(clusterDay);
+  cy.get(downButtonsDict[clusterDay]).click();
   // see that the modal popped up
   // TODO waiting on new release to uncomment the below
   // cy.get('#generate-discovery-iso-modal').should('be.visible');
   cy.get('[id^=pf-modal-part]').should('be.visible');
+  // clear existing keys
+  cy.get('#sshPublicKey').clear();
   // feed in the public ssh key
   cy.get('#sshPublicKey').type(sshPubKey);
   let aborted = false;
@@ -164,7 +175,7 @@ export const generateIso = (
   // cy.get('.pf-c-modal-box__footer > .pf-m-primary', { timeout: 5 * 60 * 1000 });
   // bug: cy.get() timeout is ignored since former inner XHR is aborted by Cypress
   // using constant GENERATE_ISO_TIMEOUT causes a lint crash https://github.com/cypress-io/eslint-plugin-cypress/issues/43
-  cy.wait(2 * 60 * 1000).then(() => {
+  cy.wait(1 * 60 * 1000).then(() => {
     // yield potentially onAnyAbort()
     if (aborted) {
       cy.log('Long-running XHR was aborted');
